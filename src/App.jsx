@@ -1,90 +1,132 @@
-import { useReducer, useState } from "react";
+import React, { useState, createContext, useContext } from 'react';
+import './App.css'; // если хочешь, можешь оставить подключение стилей
 
-function listReducer(state, action) {
-    switch (action.type) {
-        case "ADD_ITEM":
-            return [...state, { id: Date.now(), text: action.payload }];
-        default:
-            return state;
-    }
-}
+// Создаём контекст
+const ItemsContext = createContext();
 
-export default function App() {
-    const [items, dispatch] = useReducer(listReducer, []);
-    const [inputValue, setInputValue] = useState("");
+// Хук для удобства
+const useItems = () => useContext(ItemsContext);
 
-    const handleAdd = () => {
-        if (inputValue.trim()) {
-            dispatch({ type: "ADD_ITEM", payload: inputValue });
-            setInputValue("");
-        }
+// Провайдер контекста
+const ItemsProvider = ({ children }) => {
+    const [items, setItems] = useState([]);
+    return (
+        <ItemsContext.Provider value={{ items, setItems }}>
+            {children}
+        </ItemsContext.Provider>
+    );
+};
+
+const style = {
+    app: {
+        fontFamily: 'Arial, sans-serif',
+        textAlign: 'center',
+        padding: '20px',
+    },
+    h1: {
+        color: '#333',
+    },
+    inputContainer: {
+        display: 'flex',
+        justifyContent: 'center',
+        gap: '10px',
+        marginBottom: '20px',
+    },
+    input: {
+        padding: '10px',
+        fontSize: '16px',
+        width: '250px',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+    },
+    button: {
+        padding: '10px 20px',
+        fontSize: '16px',
+        backgroundColor: '#4CAF50',
+        color: 'white',
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+    },
+    buttonDisabled: {
+        backgroundColor: '#ccc',
+        cursor: 'not-allowed',
+    },
+    itemList: {
+        listStyleType: 'none',
+        padding: '0',
+    },
+    item: {
+        padding: '10px',
+        margin: '5px 0',
+        backgroundColor: '#f9f9f9',
+        border: '1px solid #ddd',
+        borderRadius: '4px',
+        fontSize: '18px',
+    },
+};
+
+// Компонент для ввода нового элемента
+const ItemInput = () => {
+    const [inputText, setInputText] = useState('');
+    const { items, setItems } = useItems();
+
+    const handleInputChange = (e) => setInputText(e.target.value);
+
+    const handleAddItem = () => {
+        const newItem = {
+            id: Date.now(),
+            text: inputText,
+        };
+        setItems([...items, newItem]);
+        setInputText('');
     };
 
     return (
-        <div style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            backgroundColor: "#fff",
-            width: "100vw",
-            color: "#000" // Чёрный цвет текста для всей страницы
-        }}>
-            <div style={{
-                textAlign: "center",
-                padding: 20,
-                width: "100%",
-                maxWidth: 400,
-                borderRadius: 10,
-                boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
-                backgroundColor: "#fff",
-                minHeight: "300px"
-            }}>
-                <h2 style={{ color: "#000" }}>Список элементов</h2>
-                <input
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Введите текст..."
-                    style={{
-                        padding: 10,
-                        width: "80%",
-                        marginBottom: 10,
-                        border: "1px solid #ccc",
-                        borderRadius: 5,
-                        backgroundColor: "#fff",
-                        color: "#000" // Чёрный цвет текста
-                    }}
-                />
-                <br />
-                <button
-                    onClick={handleAdd}
-                    disabled={!inputValue.trim()}
-                    style={{
-                        padding: 10,
-                        cursor: "pointer",
-                        backgroundColor: "#007bff",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 5,
-                        fontWeight: "bold",
-                        marginBottom: 10
-                    }}
-                >
-                    Добавить
-                </button>
-                <ul style={{ listStyle: "none", padding: 0, marginTop: 20 }}>
-                    {items.map((item) => (
-                        <li key={item.id} style={{
-                            padding: 10,
-                            borderBottom: "1px solid #ddd",
-                            color: "#000" // Чёрный текст для списка
-                        }}>
-                            {item.text}
-                        </li>
-                    ))}
-                </ul>
-            </div>
+        <div style={style.inputContainer}>
+            <input
+                type="text"
+                value={inputText}
+                onChange={handleInputChange}
+                placeholder="Введите текст"
+                style={style.input}
+            />
+            <button
+                onClick={handleAddItem}
+                disabled={!inputText}
+                style={inputText ? style.button : { ...style.button, ...style.buttonDisabled }}
+            >
+                Добавить
+            </button>
         </div>
     );
-}
+};
+
+// Компонент для отображения списка
+const ItemList = () => {
+    const { items } = useItems();
+
+    return (
+        <ul style={style.itemList}>
+            {items.map((item) => (
+                <li key={item.id} style={style.item}>
+                    {item.text}
+                </li>
+            ))}
+        </ul>
+    );
+};
+
+const App = () => {
+    return (
+        <ItemsProvider>
+            <div style={style.app}>
+                <h1 style={style.h1}>Список элементов</h1>
+                <ItemInput />
+                <ItemList />
+            </div>
+        </ItemsProvider>
+    );
+};
+
+export default App;
